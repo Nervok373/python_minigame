@@ -5,12 +5,11 @@ import time
 import pygame
 from pygame.locals import *
 
-
 # settings
-CELL_SIZE = 40
-MAP_SIZE = (35, 25)
+CELL_SIZE = 35
+MAP_SIZE = (30, 20)
 FPS = 60
-BOMB = 85
+BOMB = 65  # ~ map_size[0]*map_size[0]//9
 TIME_START = time.time()
 
 OPENNESS_MAP = ["c"*MAP_SIZE[0] for _ in range(MAP_SIZE[1])]
@@ -22,13 +21,11 @@ BOMB_COUNT = BOMB
 
 background_color = "#4d5153"
 
-
 def caption_update():
     t = round(time.time() - TIME_START)
     pygame.display.set_caption(
         f"Bombs: {BOMB_COUNT}     time: {round(t/60)}:"
         f"{'0'+str(t%60) if t%60 < 10 else t%60}")
-
 
 pygame.init()
 pygame.mixer.init()
@@ -77,7 +74,6 @@ def map_generate(size:(int, int), bombs:int):
 
     return cells
 
-
 def open_cell_for_cord(cord):
     for c in Cell_sprite:
         if c.pos() == cord:
@@ -107,7 +103,8 @@ def cells_open(cord):
         return an_open
 
 def map_regenerate():
-    global BOMB_COUNT, TIME_START
+    global BOMB_COUNT, TIME_START, OPENNESS_MAP
+
     Cell_sprite.update()
     Cell_sprite.draw(screen)
     pygame.display.flip()
@@ -115,14 +112,12 @@ def map_regenerate():
     time.sleep(5)
     Cell_sprite.empty()
     load_map()
-    global OPENNESS_MAP
     OPENNESS_MAP = ["c" * MAP_SIZE[0] for _ in range(MAP_SIZE[1])]
 
     BOMB_COUNT = BOMB
     TIME_START = time.time()
 
     caption_update()
-
 
 class Cell(pygame.sprite.Sprite):
     def __init__(self, cord:(int, int), who:str):
@@ -149,12 +144,12 @@ class Cell(pygame.sprite.Sprite):
         self.textSurf = self.font.render(text, True,
                                  "#B22222" if self.who == "B" else "#006400")
         self.image = pygame.surface.Surface((CELL_SIZE-2, CELL_SIZE-2))
-        W = self.textSurf.get_width()
-        H = self.textSurf.get_height()
+        W, H  = self.textSurf.get_width(), self.textSurf.get_height()
         if self.flag:
             self.image.fill("#FF5555")
         else:
             self.image.fill("#A9A9A9")
+
         self.image.blit(self.textSurf,
                         [CELL_SIZE / 2 - W / 2, CELL_SIZE / 2 - H / 2])
 
@@ -205,9 +200,9 @@ class Cell(pygame.sprite.Sprite):
                 caption_update()
 
         if BOMB_COUNT == 0:
-            pygame.display.set_caption("  !!!You win!!!  ")
+            pygame.display.set_caption(f"  !!!You win!!!  "
+                                       f"  your time {round(time.time() - TIME_START)}")
             map_regenerate()
-
 
 def load_map():
     global CELLS_MAP
@@ -219,10 +214,8 @@ def load_map():
             Cell_sprite.add(cell)
 
 def click_handler(o_cell, button):
-
     if button == 1:
         cell_name = o_cell.open_action()
-
         if cell_name == "B":
             pygame.display.set_caption("  ups...  ")
             map_regenerate()
@@ -254,10 +247,8 @@ while running_main_win:
                     if cell.click().collidepoint(event.pos):
                         click_handler(cell, 3)
 
-    # обновление спрайтов
     Cell_sprite.update()
 
-    # Отрисовка
     screen.fill(background_color)
     Cell_sprite.draw(screen)
     pygame.display.flip()
